@@ -13,28 +13,44 @@ def home():
     return "Backend is working!"
 
 @app.route("/api/analyze-cv", methods=["POST"])
-def analyze():
+def analyze_cv():
     try:
-        data = request.json
+        data = request.json or {}
         cv = data.get("cv", "")
         job = data.get("job", "")
 
-        return jsonify({
-            "result": f"""
-ATS Score: 78/100
+        if not cv or not job:
+            return jsonify({"error": "CV and job description are required"}), 400
 
-Missing Keywords:
-- MATLAB
-- AutoCAD
-- Power Electronics
+        prompt = f"""
+You are an expert ATS resume reviewer.
 
-Weak Points:
-- No real work experience
-- Projects not detailed
+Analyze this CV against this job description.
 
-Improved Summary:
-Motivated Electrical Engineering student with strong foundation in circuit analysis and programming. Seeking to apply technical skills in real-world engineering environments.
+Return a clear result with:
+1. ATS Score /100
+2. Missing Keywords
+3. Weak Points
+4. Improved Summary
+5. Recommended Skills
+6. Improved Bullet Points
+
+CV:
+{cv}
+
+Job Description:
+{job}
 """
-        })
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
+
+        result = response.choices[0].message.content
+
+        return jsonify({"result": result})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
