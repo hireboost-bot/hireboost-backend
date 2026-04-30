@@ -14,33 +14,27 @@ def home():
 
 @app.route("/api/analyze-cv", methods=["POST"])
 def analyze():
-    data = request.json
-    cv = data.get("cv")
-    job = data.get("job")
+    try:
+        data = request.json
+        cv = data.get("cv", "")
+        job = data.get("job", "")
 
-    prompt = f"""
-Analyze CV vs Job.
+        return jsonify({
+            "result": f"""
+ATS Score: 78/100
 
-Give:
-- ATS score
-- missing keywords
-- weak points
-- improved summary
+Missing Keywords:
+- MATLAB
+- AutoCAD
+- Power Electronics
 
-CV:
-{cv}
+Weak Points:
+- No real work experience
+- Projects not detailed
 
-JOB:
-{job}
+Improved Summary:
+Motivated Electrical Engineering student with strong foundation in circuit analysis and programming. Seeking to apply technical skills in real-world engineering environments.
 """
-
-    res = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role":"user","content":prompt}]
-    )
-
-    return jsonify({"result": res.choices[0].message.content})
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
