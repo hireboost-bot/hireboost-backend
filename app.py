@@ -112,3 +112,44 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
+
+@app.route("/api/job-match", methods=["POST", "OPTIONS"])
+def job_match():
+    if request.method == "OPTIONS":
+        return "", 204
+
+    try:
+        data = request.json or {}
+
+        role = data.get("role", "")
+        skills = data.get("skills", "")
+        country = data.get("country", "")
+
+        prompt = f"""
+You are a career AI assistant.
+
+Find job matches for:
+
+Role: {role}
+Skills: {skills}
+Country: {country}
+
+Return:
+- 3 suitable job titles
+- Why each job matches
+- Missing skills
+- Tips to improve chances
+
+Keep it clear and structured.
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+
+        return jsonify({"result": response.choices[0].message.content})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
