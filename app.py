@@ -4,7 +4,7 @@ import os
 from openai import OpenAI
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -12,8 +12,11 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def home():
     return "Backend is working!"
 
-@app.route("/api/analyze-cv", methods=["POST"])
+@app.route("/api/analyze-cv", methods=["POST", "OPTIONS"])
 def analyze_cv():
+    if request.method == "OPTIONS":
+        return "", 204
+
     try:
         data = request.json or {}
         cv = data.get("cv", "")
@@ -48,9 +51,64 @@ Job Description:
             temperature=0.4
         )
 
-        result = response.choices[0].message.content
-
-        return jsonify({"result": result})
+        return jsonify({"result": response.choices[0].message.content})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cover-letter", methods=["POST", "OPTIONS"])
+def cover_letter():
+    if request.method == "OPTIONS":
+        return "", 204
+
+    try:
+        data = request.json or {}
+
+        name = data.get("name", "")
+        role = data.get("role", "")
+        company = data.get("company", "")
+        skills = data.get("skills", "")
+
+        if not name or not role or not company:
+            return jsonify({"error": "Name, role, and company are required"}), 400
+
+        prompt = f"""
+You are an expert career writer.
+
+Write a professional, short, persuasive cover letter.
+
+Candidate Name: {name}
+Target Role: {role}
+Company: {company}
+Key Skills: {skills}
+
+Rules:
+- Start with Dear Hiring Manager,
+- 140 to 190 words
+- Professional English
+- Sound human, not generic AI
+- Do not invent fake experience
+- End with Sincerely, then candidate name
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+
+        return jsonify({"result": response.choices[0].message.content})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
