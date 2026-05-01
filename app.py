@@ -153,3 +153,42 @@ Keep it clear and structured.
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+        
+@app.route("/api/interview-prep", methods=["POST", "OPTIONS"])
+def interview_prep():
+    if request.method == "OPTIONS":
+        return "", 204
+
+    try:
+        data = request.json or {}
+        role = data.get("role", "")
+        skills = data.get("skills", "")
+
+        if not role:
+            return jsonify({"error": "Role is required"}), 400
+
+        prompt = f"""
+You are an expert interview coach.
+
+Prepare interview questions and answers for:
+Role: {role}
+Skills: {skills}
+
+Return:
+1) 5 technical questions + short strong answers
+2) 5 behavioral questions + strong answers (STAR method)
+3) Tips to succeed in the interview
+
+Keep it clear, concise, and practical.
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+
+        return jsonify({"result": response.choices[0].message.content})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
