@@ -12,16 +12,18 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def home():
     return "Backend is working!"
 
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
 @app.route("/api/analyze-cv", methods=["POST", "OPTIONS"])
 def analyze_cv():
     if request.method == "OPTIONS":
         return "", 204
-
     try:
         data = request.json or {}
         cv = data.get("cv", "")
         job = data.get("job", "")
-
         if not cv or not job:
             return jsonify({"error": "CV and job description are required"}), 400
 
@@ -30,7 +32,7 @@ You are an expert ATS resume reviewer.
 
 Analyze this CV against this job description.
 
-Return a clear result with:
+Return:
 1. ATS Score /100
 2. Missing Keywords
 3. Weak Points
@@ -44,27 +46,21 @@ CV:
 Job Description:
 {job}
 """
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4
         )
-
         return jsonify({"result": response.choices[0].message.content})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/cover-letter", methods=["POST", "OPTIONS"])
 def cover_letter():
     if request.method == "OPTIONS":
         return "", 204
-
     try:
         data = request.json or {}
-
         name = data.get("name", "")
         role = data.get("role", "")
         company = data.get("company", "")
@@ -91,113 +87,19 @@ Rules:
 - Do not invent fake experience
 - End with Sincerely, then candidate name
 """
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5
         )
-
         return jsonify({"result": response.choices[0].message.content})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
 
 @app.route("/api/job-match", methods=["POST", "OPTIONS"])
 def job_match():
     if request.method == "OPTIONS":
         return "", 204
-
-    try:
-        data = request.json or {}
-
-        role = data.get("role", "")
-        skills = data.get("skills", "")
-        country = data.get("country", "")
-
-        prompt = f"""
-You are a career AI assistant.
-
-Find job matches for:
-
-Role: {role}
-Skills: {skills}
-Country: {country}
-
-Return:
-- 3 suitable job titles
-- Why each job matches
-- Missing skills
-- Tips to improve chances
-
-Keep it clear and structured.
-"""
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5
-        )
-
-        return jsonify({"result": response.choices[0].message.content})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-        
-@app.route("/api/interview-prep", methods=["POST", "OPTIONS"])
-def interview_prep():
-    if request.method == "OPTIONS":
-        return "", 204
-
-    try:
-        data = request.json or {}
-        role = data.get("role", "")
-        skills = data.get("skills", "")
-
-        if not role:
-            return jsonify({"error": "Role is required"}), 400
-
-        prompt = f"""
-You are an expert interview coach.
-
-Prepare interview questions and answers for:
-Role: {role}
-Skills: {skills}
-
-Return:
-1) 5 technical questions + short strong answers
-2) 5 behavioral questions + strong answers (STAR method)
-3) Tips to succeed in the interview
-
-Keep it clear, concise, and practical.
-"""
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5
-        )
-
-        return jsonify({"result": response.choices[0].message.content})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-        
-@app.route("/api/job-match", methods=["POST", "OPTIONS"])
-def job_match():
-    if request.method == "OPTIONS":
-        return "", 204
-
     try:
         data = request.json or {}
         role = data.get("role", "")
@@ -218,24 +120,19 @@ Return:
 - Missing skills
 - Tips to improve chances
 """
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5
         )
-
         return jsonify({"result": response.choices[0].message.content})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/interview-prep", methods=["POST", "OPTIONS"])
 def interview_prep():
     if request.method == "OPTIONS":
         return "", 204
-
     try:
         data = request.json or {}
         role = data.get("role", "")
@@ -253,27 +150,22 @@ Skills: {skills}
 
 Return:
 1) 5 technical questions + short strong answers
-2) 5 behavioral questions + strong answers (STAR method)
+2) 5 behavioral questions + strong answers using STAR method
 3) Tips to succeed in the interview
 """
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5
         )
-
         return jsonify({"result": response.choices[0].message.content})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/auto-fix-cv", methods=["POST", "OPTIONS"])
 def auto_fix_cv():
     if request.method == "OPTIONS":
         return "", 204
-
     try:
         data = request.json or {}
         cv = data.get("cv", "")
@@ -309,18 +201,14 @@ Return:
 4. Full Improved CV
 5. Final Advice
 """
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4
         )
-
         return jsonify({"result": response.choices[0].message.content})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
